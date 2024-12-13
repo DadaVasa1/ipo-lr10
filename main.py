@@ -1,6 +1,8 @@
 import json
 import requests
 from bs4 import BeautifulSoup
+from bs4 import Tag
+
 
 url = "https://www.scrapethissite.com/pages/simple/"
 response = requests.get(url)
@@ -18,55 +20,31 @@ for country in countries:
     count += 1
     data.append({"country": country_name, "capital": capital})
 
+
 with open("dump.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=4)
+    json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-html_table = """
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Страны и столицы</title>
-  <style>
-    table, th, td {
-      border: 1px solid rgb(207, 4, 156);
-      border-collapse: collapse;
-      background: rgb(159, 103, 173);
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <h1>Страны и столицы</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>№</th>
-        <th>Страна</th>
-        <th>Столица</th>
-      </tr>
-    </thead>
-    <tbody>
-"""
+with open('template.html', 'r', encoding='utf-8') as file:
+    filedata = file.read()
 
-count = 1
-for item in data:
-    html_table += f"""
-      <tr>
-        <td>{count}</td>
-        <td>{item["country"]}</td>
-        <td>{item["capital"]}</td>
-      </tr>
-"""
-    count += 1
+soup = BeautifulSoup(filedata, "html.parser")
 
-html_table += """
-    </tbody>
-  </table>
-</body>
-</html>
-"""
+element_to_paste = soup.find("tbody", id="tbody")
 
-# Записать HTML-код в файл Index.html
+
+for idx, item in enumerate(data, start=1):
+    new_el = Tag(name="tr")
+    new_el['class'] = 'country'
+    new_el.append(Tag(name="td"))
+    new_el.contents[0].string = str(idx)
+    new_el.append(Tag(name="td"))
+    new_el.contents[1].string = item["country"]
+    new_el.append(Tag(name="td"))
+    new_el.contents[2].string = item["capital"]
+    
+    element_to_paste.append(new_el)
+
+
 with open("Index.html", "w", encoding="utf-8") as f:
-    f.write(html_table)
+    f.write(soup.prettify())
